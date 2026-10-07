@@ -34,8 +34,13 @@
        "symbol": "ETH",
        "implementations": [
         {
+         "chain_id": "arbitrum",
+         "address": "",
+         "decimals": 18
+        },
+        {
          "chain_id": "ethereum",
-         "address": null,
+         "address": "",
          "decimals": 18
         }
        ],
@@ -89,8 +94,13 @@
        "symbol": "ETH",
        "implementations": [
         {
+         "chain_id": "arbitrum",
+         "address": "",
+         "decimals": 18
+        },
+        {
          "chain_id": "ethereum",
-         "address": null,
+         "address": "",
          "decimals": 18
         }
        ],
@@ -313,8 +323,13 @@
        "symbol": "ETH",
        "implementations": [
         {
+         "chain_id": "arbitrum",
+         "address": "",
+         "decimals": 18
+        },
+        {
          "chain_id": "ethereum",
-         "address": null,
+         "address": "",
          "decimals": 18
         }
        ],

@@ -75,6 +75,8 @@ async function fetchWithRetry(
     }
     if (res.ok) return res;
     lastError = new UpstreamError(res.status, redact(url), `HTTP ${res.status} from ${new URL(url).host}`);
+    const detail = await res.text().catch(() => '');
+    console.warn(`upstream ${res.status} ${redact(url).slice(0, 160)} :: ${detail.replace(/\s+/g, ' ').slice(0, 300)}`);
     if (res.status !== 429 && res.status < 500) throw lastError;
   }
   throw lastError!;

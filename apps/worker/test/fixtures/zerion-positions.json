@@ -58,8 +58,13 @@
      "symbol": "ETH",
      "implementations": [
       {
+       "chain_id": "base",
+       "address": "",
+       "decimals": 18
+      },
+      {
        "chain_id": "ethereum",
-       "address": null,
+       "address": "",
        "decimals": 18
       }
      ],

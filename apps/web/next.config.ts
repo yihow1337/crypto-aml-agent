@@ -6,6 +6,8 @@ const here = import.meta.dirname;
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Every page is client-rendered against the Worker API, so the site is exported as static files.
+  output: 'export',
   // The shared engine is TypeScript source without a build step.
   transpilePackages: ['@aml/engine'],
   turbopack: {

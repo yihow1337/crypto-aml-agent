@@ -350,3 +350,28 @@ describe('/api/analyze via Zerion', () => {
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe('CHAIN_UNAVAILABLE');
   });
 });
+
+describe('ETH fallback when Zerion cannot track an address', () => {
+  it('falls back to Blockscout for ETH and explains the failure for BSC', async () => {
+    const untrackable = () => new Response(JSON.stringify({ errors: [{ title: 'Malformed parameter was sent', detail: 'untrackable wallet address' }] }), { status: 400 });
+    const routes = (): [string | RegExp, Handler][] => [
+      ['coingecko', () => ({ ethereum: { usd: 2500 }, binancecoin: { usd: 600 }, tron: { usd: 0.3 }, bitcoin: { usd: 80000 } })],
+      ['api.zerion.io', untrackable],
+      ['/internal-transactions', () => ({ items: [], next_page_params: null })],
+      ['/token-transfers', () => fixture('bs-tokentransfers-ronin.json')],
+      ['/transactions', () => fixture('bs-v2-transactions-ronin.json')],
+      ['/counters', () => fixture('bs-counters-ronin.json')],
+      ['/api/v2/addresses/', () => fixture('bs-address-ronin.json')],
+    ];
+    const env = makeEnv({ ZERION_API_KEY: 'zk' });
+    const eth = await createApp({ fetcher: mockFetch(routes()).fetch }).request(`/api/analyze?chain=eth&address=${RONIN}`, {}, env);
+    expect(eth.status).toBe(200);
+    const body = (await eth.json()) as { score: number; dataQuality: { sources: string[]; notes: string[] } };
+    expect(body.score).toBe(100);
+    expect(body.dataQuality.sources.join()).toContain('Blockscout');
+    expect(body.dataQuality.notes.join()).toContain('Zerion');
+    const bsc = await createApp({ fetcher: mockFetch(routes()).fetch }).request(`/api/analyze?chain=bsc&address=${RONIN}`, {}, env);
+    expect(bsc.status).toBe(422);
+    expect(((await bsc.json()) as { error: { message: string } }).error.message).toContain('Zerion');
+  });
+});

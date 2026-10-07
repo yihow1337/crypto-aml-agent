@@ -51,3 +51,8 @@ export function addLabels(map: Record<string, AddressLabel[]>, key: string, labe
   for (const l of labels) if (!existing.some((e) => e.name === l.name && e.category === l.category)) existing.push(l);
   map[key] = existing;
 }
+
+/** The provider refuses to index this address (e.g. Zerion for exchange hot wallets). */
+export class UntrackableAddressError extends Error {
+  readonly code = 'UNTRACKABLE';
+}

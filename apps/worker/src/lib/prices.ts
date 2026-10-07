@@ -31,7 +31,7 @@ export async function getPrices(env: Env, budget: SubrequestBudget): Promise<Pri
     const data = await fetchJson<Record<string, { usd: number }>>(
       budget,
       `https://api.coingecko.com/api/v3/simple/price?ids=${Object.values(IDS).join(',')}&vs_currencies=usd`,
-      undefined,
+      { headers: { 'User-Agent': 'crypto-aml-agent/1.0 (+https://crypto-aml-agent.vercel.app)' } },
       { timeoutMs: 4000, retries: 0 },
     );
     const table = { source: 'live' } as PriceTable;

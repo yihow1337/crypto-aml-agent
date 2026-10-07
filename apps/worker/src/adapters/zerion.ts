@@ -8,7 +8,7 @@ import {
   normalizeAddress,
   sanitizeText,
 } from '@aml/engine';
-import { fetchJson } from '../lib/http';
+import { fetchJson, UpstreamError } from '../lib/http';
 import { labelsFromNames, SPAM_NOTE } from './common';
 import {
   type AdapterDeps,
@@ -18,6 +18,7 @@ import {
   type DataSource,
   type FetchedHistory,
   type HistoryOptions,
+  UntrackableAddressError,
 } from './types';
 
 const BASE = 'https://api.zerion.io/v1';
@@ -98,15 +99,28 @@ export class ZerionSource implements DataSource {
     this.name = CHAIN[chain].name;
   }
 
-  private get<T>(path: string, query: Record<string, string>): Promise<T> {
+  private async get<T>(path: string, query: Record<string, string>): Promise<T> {
     this.deps.onCompute?.(1);
     const qs = new URLSearchParams({ currency: 'usd', 'filter[chain_ids]': CHAIN[this.chain].id, ...query }).toString();
-    return fetchJson<T>(
-      this.deps.budget,
-      `${BASE}${path}?${qs}`,
-      { headers: { Authorization: `Basic ${btoa(`${this.deps.apiKey}:`)}` } },
-      { timeoutMs: 15_000, retryDelayMs: 1200 },
-    );
+    try {
+      return await fetchJson<T>(
+        this.deps.budget,
+        `${BASE}${path}?${qs}`,
+        { headers: { Authorization: `Basic ${btoa(`${this.deps.apiKey}:`)}` } },
+        { timeoutMs: 15_000, retryDelayMs: 1200 },
+      );
+    } catch (e) {
+      // Zerion answers 400 "untrackable wallet address" for exchange hot wallets and similar.
+      if (e instanceof UpstreamError && e.status === 400) {
+        throw new UntrackableAddressError('Zerion 不追蹤此地址（多為交易所熱錢包等超大量地址）');
+      }
+      throw e;
+    }
+  }
+
+  /** Zerion marks a chain's native coin with an empty (or null) implementation address. */
+  private isNative(impl: { address: string | null } | undefined): boolean {
+    return impl !== undefined && !impl.address;
   }
 
   private implementation(info: FungibleInfo | null | undefined) {
@@ -119,10 +133,7 @@ export class ZerionSource implements DataSource {
       'filter[trash]': 'only_non_trash',
       sort: 'value',
     });
-    const native = r.data.find((p) => {
-      const impl = this.implementation(p.attributes.fungible_info);
-      return impl !== undefined && impl.address === null;
-    });
+    const native = r.data.find((p) => this.isNative(this.implementation(p.attributes.fungible_info)));
     const balance = native ? amountOf(native.attributes.quantity) : 0;
     const price = this.chain === 'eth' ? this.deps.prices.ETH : this.deps.prices.BNB;
     return {
@@ -161,7 +172,7 @@ export class ZerionSource implements DataSource {
         const contract = impl?.address ? impl.address.toLowerCase() : undefined;
         const symbol = sanitizeText(t.fungible_info.symbol ?? '?', 16);
         const amount = amountOf(t.quantity);
-        const isNative = impl !== undefined && impl.address === null;
+        const isNative = this.isNative(impl);
         let usd: number | undefined;
         if (isNative) {
           usd = t.value ?? undefined;
@@ -217,3 +228,5 @@ export class ZerionSource implements DataSource {
     return { address, labels: curatedLabels(this.chain, address), counterparties: [...set] };
   }
 }
+
+export { UntrackableAddressError } from './types';

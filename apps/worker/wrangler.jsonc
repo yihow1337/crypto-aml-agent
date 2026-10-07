@@ -24,8 +24,9 @@
     "GLM_BASE_URL": "https://api.z.ai/api/coding/paas/v4",
     "GLM_MODEL": "glm-5.3",
     "GLM_THINKING": "disabled",
-    "ALLOWED_ORIGINS": "http://localhost:3000",
-    "ALLOWED_ORIGIN_PATTERN": "^https://crypto-aml-agent(-[a-z0-9-]+)?\\.vercel\\.app$",
+    "ALLOWED_ORIGINS": "https://crypto-aml-agent.vercel.app,http://localhost:3000",
+    // Preview deployments of this Vercel team only (other teams' projects can share the prefix).
+    "ALLOWED_ORIGIN_PATTERN": "^https://crypto-aml-agent-[a-z0-9]+-hao-f3763455\\.vercel\\.app$",
     "AGENT_DAILY_PER_IP": "15",
     "GLM_DAILY_GLOBAL": "300",
     "ZERION_DAILY_REQUESTS": "1800",

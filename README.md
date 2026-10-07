@@ -2,7 +2,7 @@
 
 > 課程專題。輸入 Ethereum / BNB Smart Chain / TRON / Bitcoin 地址，系統即時抓取鏈上交易，以 **21 條 AML 洗錢態樣規則 + OFAC 制裁名單 + 統計異常 + Isolation Forest 機器學習** 計算風險分數，並由 **GLM 大型語言模型 Agent** 透過工具呼叫（function calling）蒐集證據、撰寫繁體中文調查報告。
 
-- 公開網站（Vercel）：_部署後填入_
+- 公開網站（Vercel）：https://crypto-aml-agent.vercel.app
 - 後端 API（Cloudflare Workers）：https://crypto-aml-api.howard200507.workers.dev/api/health
 
 ## 功能
@@ -85,7 +85,7 @@ NEXT_PUBLIC_API_BASE=http://localhost:8787 npx next dev
    npx wrangler secret put GLM_API_KEY       # Z.ai GLM
    npx wrangler secret put ADMIN_TOKEN       # 管理用權杖（自訂亂碼）
    ```
-5. Vercel：專案根目錄設為 `apps/web`，環境變數 `NEXT_PUBLIC_API_BASE` = Worker 網址，`npx vercel --prod`
+5. Vercel：在 repo 根目錄 `npx vercel link`，設定環境變數 `NEXT_PUBLIC_API_BASE` = Worker 網址，`npx vercel deploy --prod`（根目錄的 `vercel.json` 會以 Next.js 靜態匯出建置 `apps/web/out`）
 6. 把 Vercel 網域加入 `wrangler.jsonc` 的 `ALLOWED_ORIGINS` 後重新 `wrangler deploy`
 
 GLM 端點與模型可在 `wrangler.jsonc` 調整：`GLM_BASE_URL`（預設 Coding Plan 端點 `https://api.z.ai/api/coding/paas/v4`；一般 API 為 `https://api.z.ai/api/paas/v4`）、`GLM_MODEL`（預設 `glm-5.3`）。未設定金鑰或 GLM 失敗時，自動改用確定性模板報告。

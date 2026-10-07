@@ -83,3 +83,11 @@ describe('ZerionSource', () => {
     expect(decodeURIComponent(calls[0].url)).toContain('page[size]=50');
   });
 });
+
+describe('ZerionSource untrackable addresses', () => {
+  it('raises UntrackableAddressError when Zerion refuses to track an address', async () => {
+    const { UntrackableAddressError } = await import('../src/adapters/zerion');
+    const { d } = deps([['/transactions/', () => new Response(JSON.stringify({ errors: [{ title: 'Malformed parameter was sent', detail: 'untrackable wallet address' }] }), { status: 400 })]]);
+    await expect(new ZerionSource('bsc', d).getHistory(S, { limit: 100 })).rejects.toBeInstanceOf(UntrackableAddressError);
+  });
+});
