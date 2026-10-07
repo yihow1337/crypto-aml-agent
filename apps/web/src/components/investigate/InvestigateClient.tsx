@@ -28,7 +28,7 @@ import {
   Users,
 } from 'lucide-react';
 import { AgentSection } from '@/components/agent/AgentSection';
-import { CounterpartyGraph } from '@/components/charts/CounterpartyGraph';
+import { CounterpartyGraph, GraphColorToggle, type GraphColorBy } from '@/components/charts/CounterpartyGraph';
 import { FlowTimeline } from '@/components/charts/FlowTimeline';
 import { RiskGauge } from '@/components/charts/RiskGauge';
 import { Card, PageHeader } from '@/components/ui/Card';
@@ -195,6 +195,7 @@ function Results({
   const forest = useIsolationForest(data);
   const range = useMemo(() => scoreRange(forest.result), [forest.result]);
   const [focus, setFocus] = useState<{ hash: string; nonce: number } | null>(null);
+  const [graphColor, setGraphColor] = useState<GraphColorBy>('amount');
   const pick = useCallback((hash: string) => setFocus({ hash, nonce: Date.now() }), []);
   const onNode = useCallback((n: GraphNode) => onInvestigate(chain, n.id), [onInvestigate, chain]);
   const topSeverity = data.hits.reduce<null | (typeof data.hits)[number]['severity']>((best, h) => {
@@ -254,7 +255,12 @@ function Results({
           title="交易對手關聯圖"
           icon={Network}
           className="lg:col-span-7"
-          subtitle={live ? '節點大小 ∝ 往來金額，顏色 = 風險等級；可拖曳、縮放，點擊節點調查該地址' : '節點大小 ∝ 往來金額，顏色 = 風險等級；可拖曳、縮放'}
+          subtitle={`${
+            graphColor === 'amount'
+              ? '節點大小與顏色深淺 ∝ 往來金額（越亮越大），紅／橘外框 = 高風險或制裁對手'
+              : '節點大小 ∝ 往來金額，顏色 = 風險等級'
+          }；可拖曳、縮放${live ? '，點擊節點調查該地址' : ''}`}
+          actions={<GraphColorToggle value={graphColor} onChange={setGraphColor} />}
         >
           {data.graph.nodes.length > 1 ? (
             <CounterpartyGraph
@@ -262,6 +268,7 @@ function Results({
               edges={data.graph.edges}
               subjectId={data.subject.address}
               onNodeClick={live ? onNode : undefined}
+              colorBy={graphColor}
             />
           ) : (
             <EmptyState icon={Network} title="沒有可繪製的交易對手" />

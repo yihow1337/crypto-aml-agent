@@ -4,14 +4,16 @@ import { useMemo } from 'react';
 import { CATEGORY_ZH, shortAddress, type GraphEdge, type GraphNode } from '@aml/engine';
 import { riskTier, type RiskTier } from '@/components/ui/badges';
 import { fmtInt, fmtUsdCompact } from '@/lib/format';
-import { INK, RISK_COLOR, SURFACE, TOOLTIP_BASE } from '@/lib/theme';
+import { AMOUNT_TIERS, amountTier, INK, RISK_COLOR, SURFACE, TOOLTIP_BASE } from '@/lib/theme';
 import { tipLine, tipTitle } from './chartUtils';
 import { EChart, type EChartsOption } from './EChart';
 
 const SUBJECT_COLOR = INK.primary;
 const UNKNOWN_COLOR = '#6b7a94';
 
-const CATEGORIES: { key: 'subject' | RiskTier; name: string; color: string }[] = [
+export type GraphColorBy = 'amount' | 'risk';
+
+const RISK_CATEGORIES: { key: 'subject' | RiskTier; name: string; color: string }[] = [
   { key: 'subject', name: '調查對象', color: SUBJECT_COLOR },
   { key: 'critical', name: '極高風險', color: RISK_COLOR.critical },
   { key: 'high', name: '高風險', color: RISK_COLOR.high },
@@ -19,6 +21,14 @@ const CATEGORIES: { key: 'subject' | RiskTier; name: string; color: string }[] =
   { key: 'low', name: '低風險（已知實體）', color: RISK_COLOR.low },
   { key: 'unknown', name: '未標記', color: UNKNOWN_COLOR },
 ];
+
+const AMOUNT_CATEGORIES: { name: string; color: string }[] = [
+  { name: '調查對象', color: SUBJECT_COLOR },
+  ...AMOUNT_TIERS.map((t) => ({ name: t.label, color: t.color })),
+];
+
+/** In amount mode, risky counterparties keep a status-coloured ring so risk stays visible. */
+const RISK_RING: Partial<Record<RiskTier, string>> = { critical: RISK_COLOR.critical, high: RISK_COLOR.high };
 
 export function nodeTier(n: GraphNode): RiskTier {
   if (n.category === 'sanctioned') return 'critical';
@@ -39,8 +49,9 @@ interface NodeDatum {
 }
 
 /**
- * Force-directed counterparty graph. Node size ∝ √volume; colour = risk tier (status scale,
- * named in the legend); the subject is an ink-coloured diamond. Labels are selective: the
+ * Force-directed counterparty graph. Node size ∝ √volume. Colour is either the volume tier
+ * (one-hue ordinal ramp, lighter = larger; high-risk nodes keep a red/orange ring) or the risk
+ * tier (status scale). The subject is an ink-coloured diamond. Labels are selective: the
  * subject, labelled entities and the five largest counterparties.
  */
 export function CounterpartyGraph({
@@ -49,12 +60,14 @@ export function CounterpartyGraph({
   subjectId,
   onNodeClick,
   height = 460,
+  colorBy = 'amount',
 }: {
   nodes: GraphNode[];
   edges: GraphEdge[];
   subjectId: string;
   onNodeClick?: (node: GraphNode) => void;
   height?: number;
+  colorBy?: GraphColorBy;
 }) {
   const option = useMemo<EChartsOption>(() => {
     const maxVol = Math.max(1, ...nodes.map((n) => n.volumeUsd || 0));
@@ -67,10 +80,17 @@ export function CounterpartyGraph({
         .slice(0, 5)
         .map((n) => n.id),
     );
+    const byAmount = colorBy === 'amount';
+    const categories = byAmount ? AMOUNT_CATEGORIES : RISK_CATEGORIES;
     const data: NodeDatum[] = nodes.map((n) => {
       const isSubject = n.category === 'subject' || n.id.toLowerCase() === subjectKey;
       const tier = nodeTier(n);
-      const catIdx = isSubject ? 0 : CATEGORIES.findIndex((c) => c.key === tier);
+      const catIdx = isSubject
+        ? 0
+        : byAmount
+          ? 1 + amountTier(n.volumeUsd)
+          : RISK_CATEGORIES.findIndex((c) => c.key === tier);
+      const ring = byAmount ? RISK_RING[tier] : undefined;
       const size = isSubject ? 46 : 12 + 34 * Math.sqrt(Math.max(0, n.volumeUsd) / maxVol);
       const labelled = n.category !== 'unknown' && n.category !== 'other';
       return {
@@ -85,7 +105,9 @@ export function CounterpartyGraph({
         label: { show: isSubject || labelled || top.has(n.id) },
         itemStyle: isSubject
           ? { color: SUBJECT_COLOR, borderColor: '#5598e7', borderWidth: 3 }
-          : { borderColor: SURFACE.card, borderWidth: 2 },
+          : ring
+            ? { borderColor: ring, borderWidth: 3 }
+            : { borderColor: SURFACE.card, borderWidth: 2 },
       };
     });
     const known = new Set(nodes.map((n) => n.id));
@@ -108,7 +130,7 @@ export function CounterpartyGraph({
         itemWidth: 10,
         itemHeight: 10,
         textStyle: { color: INK.secondary, fontSize: 12 },
-        data: CATEGORIES.map((c) => ({ name: c.name, icon: c.key === 'subject' ? 'diamond' : 'circle' })),
+        data: categories.map((c, i) => ({ name: c.name, icon: i === 0 ? 'diamond' : 'circle' })),
       },
       tooltip: {
         ...TOOLTIP_BASE,
@@ -131,6 +153,7 @@ export function CounterpartyGraph({
             tipLine('地址', n.id, true) +
             tipLine('類別', CATEGORY_ZH[n.category] ?? n.category) +
             tipLine('往來總額', fmtUsdCompact(n.volumeUsd)) +
+            (n.id.toLowerCase() === subjectKey ? '' : tipLine('金額級距', AMOUNT_TIERS[amountTier(n.volumeUsd)].label)) +
             tipLine('風險係數', n.risk.toFixed(2)) +
             (onNodeClick && n.id.toLowerCase() !== subjectKey
               ? `<div style="color:#8b98b0;font-size:11px;margin-top:4px">點擊節點可調查此地址</div>`
@@ -148,7 +171,7 @@ export function CounterpartyGraph({
           bottom: 8,
           left: 8,
           right: 8,
-          categories: CATEGORIES.map((c) => ({ name: c.name, itemStyle: { color: c.color } })),
+          categories: categories.map((c) => ({ name: c.name, itemStyle: { color: c.color } })),
           data,
           links,
           edgeSymbol: ['none', 'arrow'],
@@ -167,7 +190,7 @@ export function CounterpartyGraph({
         },
       ],
     };
-  }, [nodes, edges, subjectId, onNodeClick]);
+  }, [nodes, edges, subjectId, onNodeClick, colorBy]);
 
   return (
     <EChart
@@ -180,5 +203,32 @@ export function CounterpartyGraph({
         if (d && d.node && d.id.toLowerCase() !== subjectId.toLowerCase()) onNodeClick(d.node);
       }}
     />
+  );
+}
+
+/** Two-option segmented control for the graph's colour encoding. */
+export function GraphColorToggle({ value, onChange }: { value: GraphColorBy; onChange: (v: GraphColorBy) => void }) {
+  const options: { key: GraphColorBy; label: string }[] = [
+    { key: 'amount', label: '依金額' },
+    { key: 'risk', label: '依風險' },
+  ];
+  return (
+    <div role="group" aria-label="節點顏色" className="inline-flex rounded-lg border border-line-strong bg-sunken p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          aria-pressed={value === o.key}
+          onClick={() => onChange(o.key)}
+          className={
+            value === o.key
+              ? 'rounded-md bg-raised px-2.5 py-1 text-xs font-medium text-ink shadow-sm shadow-black/30'
+              : 'rounded-md px-2.5 py-1 text-xs text-ink-3 hover:text-ink'
+          }
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }

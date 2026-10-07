@@ -33,6 +33,25 @@ export const RISK_COLOR: Record<RiskLevel, string> = {
 
 export const RISK_ORDER: RiskLevel[] = ['low', 'medium', 'high', 'critical'];
 
+/**
+ * Counterparty volume tiers (ordinal). One blue hue, lighter = larger so the biggest flows stand
+ * out on the dark card; the darkest step still clears 2:1 against #111a2c. Validated with the
+ * dataviz ordinal check (monotone lightness, visible step gaps, single hue).
+ */
+export const AMOUNT_TIERS = [
+  { max: 1_000, label: '未滿 US$1K', color: '#184f95' },
+  { max: 10_000, label: 'US$1K–10K', color: '#2a78d6' },
+  { max: 100_000, label: 'US$10K–100K', color: '#5598e7' },
+  { max: 1_000_000, label: 'US$100K–1M', color: '#86b6ef' },
+  { max: Infinity, label: 'US$1M 以上', color: '#cde2fb' },
+] as const;
+
+/** Index into AMOUNT_TIERS for a USD volume; invalid or negative values count as the smallest. */
+export function amountTier(usd: number): number {
+  if (!(usd > 0)) return 0;
+  return AMOUNT_TIERS.findIndex((t) => usd < t.max);
+}
+
 export const CHAIN_COLOR: Record<Chain, string> = {
   eth: '#3987e5',
   bsc: '#c98500',
