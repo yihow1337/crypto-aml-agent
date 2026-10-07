@@ -1,0 +1,36 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "crypto-aml-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "crypto-aml-db",
+      // Filled in after `wrangler d1 create crypto-aml-db` (an identifier, not a secret).
+      "database_id": "09dcfb83-f9b5-4726-987e-734d922baf5d",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    { "name": "RL_AGENT", "namespace_id": "4101", "simple": { "limit": 3, "period": 60 } },
+    { "name": "RL_API", "namespace_id": "4102", "simple": { "limit": 30, "period": 60 } }
+  ],
+  "triggers": {
+    "crons": ["*/10 * * * *", "*/15 * * * *", "17 3 * * *"]
+  },
+  "vars": {
+    "GLM_BASE_URL": "https://api.z.ai/api/coding/paas/v4",
+    "GLM_MODEL": "glm-5.3",
+    "GLM_THINKING": "disabled",
+    "ALLOWED_ORIGINS": "http://localhost:3000",
+    "ALLOWED_ORIGIN_PATTERN": "^https://crypto-aml-agent(-[a-z0-9-]+)?\\.vercel\\.app$",
+    "AGENT_DAILY_PER_IP": "15",
+    "GLM_DAILY_GLOBAL": "300",
+    "ZERION_DAILY_REQUESTS": "1800",
+    "WATCHLIST_MAX": "30",
+    "WATCHLIST_MAX_BSC": "5",
+    "WATCHLIST_DAILY_PER_IP": "3"
+  }
+}

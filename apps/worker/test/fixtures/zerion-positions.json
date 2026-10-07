@@ -1,0 +1,81 @@
+{
+ "links": {
+  "self": "x"
+ },
+ "data": [
+  {
+   "type": "positions",
+   "id": "usdt",
+   "attributes": {
+    "position_type": "wallet",
+    "quantity": {
+     "int": "100000000",
+     "decimals": 6,
+     "float": 100.0,
+     "numeric": "100.0"
+    },
+    "value": 100.0,
+    "price": 1.0,
+    "fungible_info": {
+     "name": "Tether USD",
+     "symbol": "USDT",
+     "implementations": [
+      {
+       "chain_id": "ethereum",
+       "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+       "decimals": 6
+      }
+     ],
+     "flags": {
+      "verified": true
+     }
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "positions",
+   "id": "eth",
+   "attributes": {
+    "position_type": "wallet",
+    "quantity": {
+     "int": "2000000000000000000",
+     "decimals": 18,
+     "float": 2.0,
+     "numeric": "2.0"
+    },
+    "value": 5000.0,
+    "price": 2500.0,
+    "fungible_info": {
+     "name": "Ethereum",
+     "symbol": "ETH",
+     "implementations": [
+      {
+       "chain_id": "ethereum",
+       "address": null,
+       "decimals": 18
+      }
+     ],
+     "flags": {
+      "verified": true
+     }
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  }
+ ]
+}

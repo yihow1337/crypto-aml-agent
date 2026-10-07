@@ -1,0 +1,23 @@
+{
+  "name": "@aml/worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "db:migrate:local": "wrangler d1 migrations apply crypto-aml-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply crypto-aml-db --remote"
+  },
+  "dependencies": {
+    "@aml/engine": "*",
+    "hono": "^4.13.13",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261007.1",
+    "wrangler": "^4.147.0"
+  }
+}

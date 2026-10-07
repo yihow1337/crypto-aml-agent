@@ -1,0 +1,451 @@
+{
+ "links": {
+  "self": "https://api.zerion.io/v1/wallets/x/transactions/",
+  "next": "https://api.zerion.io/v1/wallets/x/transactions/?page[after]=abc"
+ },
+ "data": [
+  {
+   "type": "transactions",
+   "id": "id-a",
+   "attributes": {
+    "operation_type": "receive",
+    "hash": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "mined_at": "2026-09-01T10:00:00+00:00",
+    "mined_at_block": 23000000,
+    "sent_from": "0x28c6c06298d514db089934071355e5743bf21d60",
+    "sent_to": "0x5000000000000000000000000000000000000005",
+    "status": "confirmed",
+    "nonce": 1,
+    "transfers": [
+     {
+      "direction": "in",
+      "quantity": {
+       "int": "1000000000000000000",
+       "decimals": 18,
+       "float": 1.0,
+       "numeric": "1.0"
+      },
+      "value": 2400.5,
+      "price": 2400.5,
+      "sender": "0x28c6c06298d514db089934071355e5743bf21d60",
+      "recipient": "0x5000000000000000000000000000000000000005",
+      "fungible_info": {
+       "name": "Ethereum",
+       "symbol": "ETH",
+       "implementations": [
+        {
+         "chain_id": "ethereum",
+         "address": null,
+         "decimals": 18
+        }
+       ],
+       "flags": {
+        "verified": true
+       }
+      }
+     }
+    ],
+    "approvals": [],
+    "flags": {
+     "is_trash": false
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-b",
+   "attributes": {
+    "operation_type": "receive",
+    "hash": "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "mined_at": "2026-09-02T10:00:00+00:00",
+    "mined_at_block": 23000100,
+    "sent_from": "0x9999999999999999999999999999999999999999",
+    "sent_to": "0xd90e2f925da726b50c4ed8d0fb90ad053324f31b",
+    "status": "confirmed",
+    "nonce": 1,
+    "transfers": [
+     {
+      "direction": "in",
+      "quantity": {
+       "int": "9900000000000000000",
+       "decimals": 18,
+       "float": 9.9,
+       "numeric": "9.9"
+      },
+      "value": 24750.0,
+      "price": 2500.0,
+      "sender": "0x910cbd523d972eb0a6f4cae4618ad62622b39dbf",
+      "recipient": "0x5000000000000000000000000000000000000005",
+      "fungible_info": {
+       "name": "Ethereum",
+       "symbol": "ETH",
+       "implementations": [
+        {
+         "chain_id": "ethereum",
+         "address": null,
+         "decimals": 18
+        }
+       ],
+       "flags": {
+        "verified": true
+       }
+      }
+     }
+    ],
+    "approvals": [],
+    "flags": {
+     "is_trash": false
+    },
+    "application_metadata": {
+     "name": "Tornado Cash",
+     "contract_address": "0xd90e2f925da726b50c4ed8d0fb90ad053324f31b"
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-c",
+   "attributes": {
+    "operation_type": "send",
+    "hash": "0xcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "mined_at": "2026-09-03T10:00:00+00:00",
+    "mined_at_block": 23000200,
+    "sent_from": "0x5000000000000000000000000000000000000005",
+    "sent_to": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+    "status": "confirmed",
+    "nonce": 1,
+    "transfers": [
+     {
+      "direction": "out",
+      "quantity": {
+       "int": "5000000000",
+       "decimals": 6,
+       "float": 5000.0,
+       "numeric": "5000.0"
+      },
+      "value": 4999.0,
+      "price": 0.9998,
+      "sender": "0x5000000000000000000000000000000000000005",
+      "recipient": "0x7000000000000000000000000000000000000007",
+      "fungible_info": {
+       "name": "Tether USD",
+       "symbol": "USDT",
+       "implementations": [
+        {
+         "chain_id": "ethereum",
+         "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+         "decimals": 6
+        }
+       ],
+       "flags": {
+        "verified": true
+       }
+      }
+     }
+    ],
+    "approvals": [],
+    "flags": {
+     "is_trash": false
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-d",
+   "attributes": {
+    "operation_type": "receive",
+    "hash": "0xdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "mined_at": "2026-09-04T10:00:00+00:00",
+    "mined_at_block": 23000300,
+    "sent_from": "0x8888888888888888888888888888888888888888",
+    "sent_to": "0x5000000000000000000000000000000000000005",
+    "status": "confirmed",
+    "nonce": 1,
+    "transfers": [
+     {
+      "direction": "in",
+      "quantity": {
+       "int": "1000000000000000000000",
+       "decimals": 18,
+       "float": 1000.0,
+       "numeric": "1000.0"
+      },
+      "value": null,
+      "price": null,
+      "sender": "0x8888888888888888888888888888888888888888",
+      "recipient": "0x5000000000000000000000000000000000000005",
+      "fungible_info": {
+       "name": "Visit scam.example",
+       "symbol": "SCAM",
+       "implementations": [
+        {
+         "chain_id": "ethereum",
+         "address": "0x6666666666666666666666666666666666666666",
+         "decimals": 18
+        }
+       ],
+       "flags": {
+        "verified": false
+       }
+      }
+     }
+    ],
+    "approvals": [],
+    "flags": {
+     "is_trash": true
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-e",
+   "attributes": {
+    "operation_type": "receive",
+    "hash": "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "mined_at": "2026-09-05T10:00:00+00:00",
+    "mined_at_block": 23000400,
+    "sent_from": "0x1234ffffffffffffffffffffffffffffffff5678",
+    "sent_to": "0x5000000000000000000000000000000000000005",
+    "status": "confirmed",
+    "nonce": 1,
+    "transfers": [
+     {
+      "direction": "in",
+      "quantity": {
+       "int": "5000000000",
+       "decimals": 6,
+       "float": 5000.0,
+       "numeric": "5000.0"
+      },
+      "value": null,
+      "price": null,
+      "sender": "0x1234ffffffffffffffffffffffffffffffff5678",
+      "recipient": "0x5000000000000000000000000000000000000005",
+      "fungible_info": {
+       "name": "Tether USD",
+       "symbol": "USDT",
+       "implementations": [
+        {
+         "chain_id": "ethereum",
+         "address": "0x1111111111111111111111111111111111111111",
+         "decimals": 6
+        }
+       ],
+       "flags": {
+        "verified": false
+       }
+      }
+     }
+    ],
+    "approvals": [],
+    "flags": {
+     "is_trash": true
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-f",
+   "attributes": {
+    "operation_type": "send",
+    "hash": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "mined_at": "2026-09-06T10:00:00+00:00",
+    "mined_at_block": 23000500,
+    "sent_from": "0x5000000000000000000000000000000000000005",
+    "sent_to": "0x7000000000000000000000000000000000000007",
+    "status": "failed",
+    "nonce": 1,
+    "transfers": [
+     {
+      "direction": "out",
+      "quantity": {
+       "int": "500000000000000000",
+       "decimals": 18,
+       "float": 0.5,
+       "numeric": "0.5"
+      },
+      "value": 1250.0,
+      "price": 2500.0,
+      "sender": "0x5000000000000000000000000000000000000005",
+      "recipient": "0x7000000000000000000000000000000000000007",
+      "fungible_info": {
+       "name": "Ethereum",
+       "symbol": "ETH",
+       "implementations": [
+        {
+         "chain_id": "ethereum",
+         "address": null,
+         "decimals": 18
+        }
+       ],
+       "flags": {
+        "verified": true
+       }
+      }
+     }
+    ],
+    "approvals": [],
+    "flags": {
+     "is_trash": false
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-7",
+   "attributes": {
+    "operation_type": "send",
+    "hash": "0x7777777777777777777777777777777777777777777777777777777777777777",
+    "mined_at": "2026-09-07T10:00:00+00:00",
+    "mined_at_block": 23000550,
+    "sent_from": "0x5000000000000000000000000000000000000005",
+    "sent_to": "0x7000000000000000000000000000000000000007",
+    "status": "confirmed",
+    "nonce": 1,
+    "transfers": [
+     {
+      "direction": "out",
+      "quantity": {
+       "int": "0",
+       "decimals": 6,
+       "float": 0.0,
+       "numeric": "0.0"
+      },
+      "value": 0,
+      "price": 1.0,
+      "sender": "0x5000000000000000000000000000000000000005",
+      "recipient": "0x7000000000000000000000000000000000000007",
+      "fungible_info": {
+       "name": "Tether USD",
+       "symbol": "USDT",
+       "implementations": [
+        {
+         "chain_id": "ethereum",
+         "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+         "decimals": 6
+        }
+       ],
+       "flags": {
+        "verified": true
+       }
+      }
+     }
+    ],
+    "approvals": [],
+    "flags": {
+     "is_trash": true
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-8",
+   "attributes": {
+    "operation_type": "approve",
+    "hash": "0x8888888888888888888888888888888888888888888888888888888888888888",
+    "mined_at": "2026-09-07T11:00:00+00:00",
+    "mined_at_block": 23000560,
+    "sent_from": "0x5000000000000000000000000000000000000005",
+    "sent_to": "0x3333333333333333333333333333333333333333",
+    "status": "confirmed",
+    "nonce": 1,
+    "transfers": [],
+    "approvals": [],
+    "flags": {
+     "is_trash": false
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  },
+  {
+   "type": "transactions",
+   "id": "id-9",
+   "attributes": {
+    "operation_type": "send",
+    "hash": "0x9999999999999999999999999999999999999999999999999999999999999999",
+    "mined_at": "2026-09-08T10:00:00+00:00",
+    "mined_at_block": 23000600,
+    "sent_from": "0x5000000000000000000000000000000000000005",
+    "sent_to": "0x7000000000000000000000000000000000000007",
+    "status": "pending",
+    "nonce": 1,
+    "transfers": [],
+    "approvals": [],
+    "flags": {
+     "is_trash": false
+    }
+   },
+   "relationships": {
+    "chain": {
+     "data": {
+      "type": "chains",
+      "id": "ethereum"
+     }
+    }
+   }
+  }
+ ]
+}

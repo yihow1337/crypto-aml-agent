@@ -1,0 +1,25 @@
+{
+  "name": "crypto-aml-agent",
+  "private": true,
+  "description": "AI 鏈上風險監控與異常交易偵測系統 (Crypto AML Agent)",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev:web": "npm run dev -w @aml/web",
+    "dev:worker": "npm run dev -w @aml/worker",
+    "build:web": "npm run build -w @aml/web",
+    "sanctions:update": "node scripts/update-sanctions.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~6.0.3",
+    "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,7 @@
+# Copy to .dev.vars for `wrangler dev` (never commit .dev.vars).
+# In production set these with `npx wrangler secret put <NAME>`.
+GLM_API_KEY=
+ZERION_API_KEY=
+TRONGRID_API_KEY=
+BLOCKSCOUT_API_KEY=
+ADMIN_TOKEN=
