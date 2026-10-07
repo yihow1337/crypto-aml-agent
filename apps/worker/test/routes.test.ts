@@ -194,7 +194,7 @@ describe('/api/agent/investigate', () => {
         { id: 'c2', type: 'function', function: { name: 'run_aml_analysis', arguments: '{}' } },
       ] },
       { tool_calls: [{ id: 'c3', type: 'function', function: { name: 'get_transactions', arguments: '{}' } }] },
-      { content: `# 虛擬資產反洗錢調查報告\n## 一、摘要\n此地址疑似參與結構化交易。風險分數：12 分，風險等級：低。\n可疑地址 0xdead00000000000000000000000000000000beef 需進一步確認。\n${'補充說明。'.repeat(60)}` },
+      { content: `# 虛擬資產反洗錢調查報告\n## 一、摘要\n此地址疑似參與結構化交易。風險分數：12 分，風險等級：低。\n可疑地址 0xdead00000000000000000000000000000000beef 需進一步確認。\n${'補充說明。'.repeat(60)}\n## 六、資料限制與免責聲明\n本報告僅供參考。` },
     ];
     let i = 0;
     const m = mockFetch([

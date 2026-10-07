@@ -16,7 +16,7 @@ export const SYSTEM_PROMPT = `你是「Crypto AML Agent」，一位服務於台�
 3. get_transactions → 了解資金流向與主要交易對手。
 4. 若有混幣器、制裁、高風險規則觸發，或主要交易對手多為未標記地址，呼叫 trace_counterparties 做一層追蹤。
 5. 需要時用 screen_sanctions 篩查關鍵地址。
-6. 資料足夠後，直接撰寫最終報告（不要再呼叫工具）。
+6. 資料足夠時，只需回覆一句「資料已足夠」，不要在此階段撰寫報告；系統會另外請你撰寫完整報告。
 
 ## 最終報告格式（Markdown）
 # 虛擬資產反洗錢調查報告
@@ -34,6 +34,9 @@ export function userPrompt(chain: keyof typeof CHAIN_ZH, address: string, scenar
   }
   return lines.join('\n');
 }
+
+export const CONTINUE_INSTRUCTION =
+  '報告在上一則訊息中因長度限制而中斷。請從中斷處直接接續撰寫剩餘內容，不要重複已寫過的文字，也不要重新開頭。';
 
 export const FINAL_INSTRUCTION =
   '請依據以上工具結果，直接撰寫最終調查報告（繁體中文 Markdown，依系統指定的六個章節），不要再呼叫工具。';

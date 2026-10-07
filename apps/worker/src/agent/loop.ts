@@ -3,17 +3,27 @@ import { type Env, intVar, nowSec } from '../env';
 import { BudgetExceededError } from '../lib/http';
 import { consumeQuota, newId } from '../lib/store';
 import type { Investigator } from '../services/investigator';
-import { glmChat, glmConfigured, type GlmMessage, LlmUnavailableError } from './glm';
+import { glmChat, glmChatStream, glmConfigured, type GlmMessage, LlmUnavailableError } from './glm';
 import { applyGuard, knownRefs } from './guard';
-import { FINAL_INSTRUCTION, SYSTEM_PROMPT, userPrompt } from './prompt';
+import { CONTINUE_INSTRUCTION, FINAL_INSTRUCTION, SYSTEM_PROMPT, userPrompt } from './prompt';
 import { executeTool, TOOL_DEFS, TOOL_ZH } from './tools';
 
 export const MAX_TURNS = 6;
 export const MAX_TOOL_CALLS = 10;
 export const MAX_PARALLEL = 3;
 export const RUN_DEADLINE_MS = 150_000;
-/** Subrequests kept back so the final report call always fits. */
+/** Subrequests kept back so the final report call (plus one continuation) always fits. */
 const FINAL_RESERVE = 3;
+/** Tool-planning turns only need room for tool calls; reports are written in a dedicated call. */
+const PLANNING_MAX_TOKENS = 2000;
+/** The streamed final report (a full six-section report is roughly 3–6k tokens). */
+export const REPORT_MAX_TOKENS = 8192;
+const PROGRESS_EVERY_MS = 8000;
+
+/** A finished report has all six sections; anything else is planning text or a cut-off draft. */
+export function isCompleteReport(text: string): boolean {
+  return /六、/.test(text) && /一、/.test(text) && text.length > 200;
+}
 
 export interface RunOptions {
   env: Env;
@@ -83,7 +93,7 @@ async function llmInvestigation(run: Run): Promise<string> {
     if (run.overDeadline() || inv.budget.remaining() <= FINAL_RESERVE) break;
     run.llmTurns = turn;
     await run.emit({ type: 'status', phase: 'llm', message: `第 ${turn} 輪：GLM 規劃下一步調查…` });
-    const { message } = await glmChat(env, inv.budget, { messages, tools: TOOL_DEFS, maxTokens: 1500 });
+    const { message, finishReason } = await glmChat(env, inv.budget, { messages, tools: TOOL_DEFS, maxTokens: PLANNING_MAX_TOKENS });
     if (message.reasoning_content && env.GLM_THINKING === 'enabled') {
       await run.emit({ type: 'thinking', text: message.reasoning_content.slice(0, 500) });
     }
@@ -96,7 +106,10 @@ async function llmInvestigation(run: Run): Promise<string> {
         messages.push({ role: 'user', content: '請先呼叫工具取得資料（至少 get_address_profile 與 run_aml_analysis），再撰寫報告。' });
         continue;
       }
-      if (content.length > 200) return content;
+      // Accept a report written here only if it is complete; a draft cut off by the planning
+      // token cap (finish_reason "length") is discarded and rewritten in the dedicated call below.
+      if (finishReason === 'stop' && isCompleteReport(content)) return content;
+      messages.pop();
       break;
     }
     const allowed = calls.slice(0, Math.max(0, Math.min(MAX_PARALLEL, MAX_TOOL_CALLS - run.toolCalls)));
@@ -110,11 +123,33 @@ async function llmInvestigation(run: Run): Promise<string> {
   }
   await run.emit({ type: 'status', phase: 'reporting', message: 'GLM 撰寫調查報告中…' });
   messages.push({ role: 'user', content: FINAL_INSTRUCTION });
-  run.llmTurns++;
-  const { message } = await glmChat(env, inv.budget, { messages, maxTokens: 4000 });
-  const content = message.content?.trim() ?? '';
+  let report = await streamReport(run, messages);
+  if (report.finishReason === 'length') {
+    // Still cut off at the report cap: ask once to continue from where it stopped.
+    await run.emit({ type: 'status', phase: 'reporting', message: '報告較長，GLM 接續撰寫中…' });
+    messages.push({ role: 'assistant', content: report.content }, { role: 'user', content: CONTINUE_INSTRUCTION });
+    const more = await streamReport(run, messages);
+    report = { content: report.content + more.content, finishReason: more.finishReason };
+    if (more.finishReason === 'length') report.content += '\n\n> ⚠️ 報告已達長度上限，後續內容未產生。';
+  }
+  const content = report.content.trim();
   if (content.length < 100) throw new LlmUnavailableError('GLM 未產生有效報告，改用規則模板報告。');
   return content;
+}
+
+async function streamReport(run: Run, messages: GlmMessage[]): Promise<{ content: string; finishReason: string }> {
+  const { env, inv } = run.o;
+  run.llmTurns++;
+  let lastProgress = Date.now();
+  return glmChatStream(env, inv.budget, {
+    messages,
+    maxTokens: REPORT_MAX_TOKENS,
+    onProgress: async (chars) => {
+      if (Date.now() - lastProgress < PROGRESS_EVERY_MS) return;
+      lastProgress = Date.now();
+      await run.emit({ type: 'status', phase: 'reporting', message: `GLM 撰寫調查報告中…已產生約 ${chars.toLocaleString()} 字` });
+    },
+  });
 }
 
 /** Deterministic investigation path used when the LLM is unavailable. */
