@@ -17,12 +17,10 @@ import {
 } from '@aml/engine';
 import type { Hono } from 'hono';
 import { z } from 'zod';
-import { runJob } from '../cron';
 import { type Env, intVar, nowSec } from '../env';
 import { ApiError } from '../lib/errors';
-import type { SubrequestBudget } from '../lib/http';
-import { consumeQuota, getCursor, ipHash } from '../lib/store';
-import { clientIp, enforceRateLimit, requireAdmin } from '../middleware';
+import { consumeQuota, getCursor } from '../lib/store';
+import { enforceNotBlocked, enforceRateLimit, requireAdmin } from '../middleware';
 import { getSanctions } from '../sanctions/store';
 
 const SEVERITIES: Severity[] = ['low', 'medium', 'high', 'critical'];
@@ -114,7 +112,7 @@ function toSummary(r: InvestigationRow): InvestigationSummary {
   };
 }
 
-export function registerMonitorRoutes(app: Hono<{ Bindings: Env }>, newBudget: () => SubrequestBudget): void {
+export function registerMonitorRoutes(app: Hono<{ Bindings: Env }>): void {
   app.get('/api/alerts', async (c) => {
     await enforceRateLimit(c, 'RL_API');
     const q = z
@@ -187,6 +185,7 @@ export function registerMonitorRoutes(app: Hono<{ Bindings: Env }>, newBudget: (
 
   app.post('/api/watchlist', async (c) => {
     await enforceRateLimit(c, 'RL_API');
+    const hash = await enforceNotBlocked(c);
     const body = z
       .object({ chain: z.enum(CHAINS as [string, ...string[]]), address: z.string().min(1).max(120), label: z.string().max(40).default('') })
       .parse(await c.req.json().catch(() => ({})));
@@ -205,7 +204,6 @@ export function registerMonitorRoutes(app: Hono<{ Bindings: Env }>, newBudget: (
     if (chain === 'bsc' && (counts?.bsc ?? 0) >= intVar(c.env.WATCHLIST_MAX_BSC, 5)) {
       throw new ApiError(429, 'QUOTA_EXCEEDED', 'BSC 監控名額已滿。');
     }
-    const hash = await ipHash(clientIp(c));
     const quota = await consumeQuota(c.env, `watch:${hash}`, intVar(c.env.WATCHLIST_DAILY_PER_IP, 3));
     if (!quota.allowed) throw new ApiError(429, 'QUOTA_EXCEEDED', '今日新增監控地址次數已達上限。', 3600);
     const label = body.label.replace(/[<>\u0000-\u001f]/g, '').trim();
@@ -218,7 +216,7 @@ export function registerMonitorRoutes(app: Hono<{ Bindings: Env }>, newBudget: (
   });
 
   app.delete('/api/watchlist/:id', async (c) => {
-    requireAdmin(c);
+    await requireAdmin(c);
     await c.env.DB.prepare('DELETE FROM watchlist WHERE id = ?').bind(Number(c.req.param('id'))).run();
     return c.json({ ok: true });
   });
@@ -247,13 +245,6 @@ export function registerMonitorRoutes(app: Hono<{ Bindings: Env }>, newBudget: (
       trace: JSON.parse(row.trace_json ?? '[]'),
     };
     return c.json(body);
-  });
-
-  app.post('/api/admin/run/:job', async (c) => {
-    requireAdmin(c);
-    const job = z.enum(['sweep', 'watchlist', 'sanctions']).parse(c.req.param('job'));
-    const stats = await runJob(job, c.env, newBudget());
-    return c.json({ ok: true, job, stats });
   });
 }
 

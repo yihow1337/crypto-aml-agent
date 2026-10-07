@@ -14,6 +14,10 @@ export function SiteFooter() {
           <Link href="/methodology" className="underline decoration-line-strong underline-offset-2 hover:text-ink">
             方法說明
           </Link>
+          {' · '}
+          <Link href="/admin" className="underline decoration-line-strong underline-offset-2 hover:text-ink">
+            管理後台
+          </Link>
         </p>
       </div>
     </footer>

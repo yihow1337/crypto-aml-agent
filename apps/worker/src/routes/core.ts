@@ -17,7 +17,7 @@ import { type Env, VERSION } from '../env';
 import { ApiError } from '../lib/errors';
 import type { SubrequestBudget } from '../lib/http';
 import { cacheGet, cachePut, getCursor } from '../lib/store';
-import { enforceRateLimit } from '../middleware';
+import { enforceNotBlocked, enforceRateLimit } from '../middleware';
 import { getSanctions } from '../sanctions/store';
 import { Investigator } from '../services/investigator';
 
@@ -59,6 +59,7 @@ export function registerCoreRoutes(app: Hono<{ Bindings: Env }>, newBudget: () =
 
   app.get('/api/analyze', async (c) => {
     await enforceRateLimit(c, 'RL_API');
+    await enforceNotBlocked(c);
     const chain = ChainSchema.parse(c.req.query('chain')) as AnalysisResult['subject']['chain'];
     const address = (c.req.query('address') ?? '').trim();
     const key = analysisKey(chain, address);
@@ -76,6 +77,7 @@ export function registerCoreRoutes(app: Hono<{ Bindings: Env }>, newBudget: () =
 
   app.post('/api/trace', async (c) => {
     await enforceRateLimit(c, 'RL_API');
+    await enforceNotBlocked(c);
     const body = z
       .object({ chain: ChainSchema, address: z.string().min(1).max(120), topN: z.number().int().min(1).max(5).optional() })
       .parse(await c.req.json());

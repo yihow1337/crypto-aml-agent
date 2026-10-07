@@ -285,6 +285,38 @@ export async function dailyMaintenance(env: Env, budget: SubrequestBudget): Prom
 
 export type JobName = 'sweep' | 'watchlist' | 'sanctions';
 
+export interface JobRun {
+  ok: boolean;
+  at: number;
+  durationMs: number;
+  stats: Record<string, unknown>;
+  error?: string;
+}
+
+/** Runs a job, records its outcome (shown in the admin panel) and never throws. */
+export async function executeJob(job: JobName, env: Env, budget: SubrequestBudget): Promise<JobRun> {
+  const started = Date.now();
+  let run: JobRun;
+  try {
+    const stats = await runJob(job, env, budget);
+    run = { ok: true, at: nowSec(), durationMs: Date.now() - started, stats };
+  } catch (e) {
+    run = { ok: false, at: nowSec(), durationMs: Date.now() - started, stats: {}, error: String((e as Error)?.message ?? e).slice(0, 200) };
+  }
+  await setCursorStmt(env, `job:${job}`, JSON.stringify(run)).run().catch(() => undefined);
+  return run;
+}
+
+export async function lastJobRun(env: Env, job: JobName): Promise<JobRun | null> {
+  const raw = await getCursor(env, `job:${job}`);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as JobRun;
+  } catch {
+    return null;
+  }
+}
+
 export function runJob(job: JobName, env: Env, budget: SubrequestBudget): Promise<Record<string, unknown>> {
   switch (job) {
     case 'sweep':

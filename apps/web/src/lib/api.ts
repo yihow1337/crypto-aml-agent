@@ -1,4 +1,8 @@
 import type {
+  AdminClientsResponse,
+  AdminJobName,
+  AdminJobRunResponse,
+  AdminOverview,
   AlertsResponse,
   AnalyzeResponse,
   ApiErrorCode,
@@ -141,7 +145,14 @@ export function buildUrl(path: string, query?: Query): string {
 
 export async function apiFetch<T>(
   path: string,
-  opts: { query?: Query; method?: string; body?: unknown; signal?: AbortSignal; timeoutMs?: number } = {},
+  opts: {
+    query?: Query;
+    method?: string;
+    body?: unknown;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    headers?: Record<string, string>;
+  } = {},
 ): Promise<T> {
   let res: Response;
   try {
@@ -150,6 +161,7 @@ export async function apiFetch<T>(
       headers: {
         Accept: 'application/json',
         ...(opts.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...opts.headers,
       },
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
       signal: withTimeout(opts.signal, opts.timeoutMs ?? TIMEOUT_MS.default),
@@ -188,6 +200,24 @@ export const api = {
   investigation: (id: string, signal?: AbortSignal) =>
     apiFetch<InvestigationDetail>(`/api/investigations/${encodeURIComponent(id)}`, { signal }),
 };
+
+/** Admin endpoints; every call sends the token in the `X-Admin-Token` header (never in the URL). */
+export function adminApi(token: string) {
+  const headers = { 'X-Admin-Token': token };
+  const call = <T>(path: string, opts: Parameters<typeof apiFetch>[1] = {}) => apiFetch<T>(path, { ...opts, headers });
+  return {
+    verify: (signal?: AbortSignal) => call<{ ok: boolean }>('/api/admin/verify', { signal }),
+    overview: (signal?: AbortSignal) => call<AdminOverview>('/api/admin/overview', { signal }),
+    clients: (signal?: AbortSignal) => call<AdminClientsResponse>('/api/admin/clients', { signal }),
+    runJob: (job: AdminJobName) => call<AdminJobRunResponse>(`/api/admin/run/${job}`, { method: 'POST', timeoutMs: 120_000 }),
+    resetClient: (id: string) => call<{ ok: boolean }>(`/api/admin/clients/${encodeURIComponent(id)}/reset`, { method: 'POST' }),
+    blockClient: (id: string, reason: string) =>
+      call<{ ok: boolean }>(`/api/admin/clients/${encodeURIComponent(id)}/block`, { method: 'POST', body: { reason } }),
+    unblockClient: (id: string) => call<{ ok: boolean }>(`/api/admin/clients/${encodeURIComponent(id)}/block`, { method: 'DELETE' }),
+  };
+}
+
+export type AdminApi = ReturnType<typeof adminApi>;
 
 // ---- Friendly zh-TW messages -----------------------------------------------------------
 

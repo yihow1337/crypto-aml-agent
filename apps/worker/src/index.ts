@@ -1,5 +1,5 @@
 import { createApp } from './app';
-import { jobForCron, runJob } from './cron';
+import { executeJob, jobForCron } from './cron';
 import type { Env } from './env';
 import { SubrequestBudget } from './lib/http';
 
@@ -11,9 +11,8 @@ export default {
     const job = jobForCron(controller.cron);
     if (!job) return;
     ctx.waitUntil(
-      runJob(job, env, new SubrequestBudget()).then(
-        (stats) => console.log(`cron ${job}`, JSON.stringify(stats)),
-        (err) => console.error(`cron ${job} failed`, err),
+      executeJob(job, env, new SubrequestBudget()).then((run) =>
+        (run.ok ? console.log : console.error)(`cron ${job}`, JSON.stringify(run)),
       ),
     );
   },

@@ -5,6 +5,7 @@ import type { Env } from './env';
 import { ApiError, errorBody, toApiError } from './lib/errors';
 import { DEFAULT_SUBREQUEST_LIMIT, SubrequestBudget } from './lib/http';
 import { isAllowedOrigin } from './middleware';
+import { registerAdminRoutes } from './routes/admin';
 import { registerAgentRoutes } from './routes/agent';
 import { registerCoreRoutes } from './routes/core';
 import { registerMonitorRoutes } from './routes/monitor';
@@ -35,7 +36,8 @@ export function createApp(opts: AppOptions = {}): Hono<{ Bindings: Env }> {
 
   registerCoreRoutes(app, newBudget);
   registerAgentRoutes(app, newBudget);
-  registerMonitorRoutes(app, newBudget);
+  registerMonitorRoutes(app);
+  registerAdminRoutes(app, newBudget);
 
   app.notFound((c) => c.json(errorBody(new ApiError(404, 'NOT_FOUND', '找不到此 API 路徑。')), 404));
   app.onError((err, c) => {

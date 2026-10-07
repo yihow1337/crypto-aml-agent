@@ -160,3 +160,81 @@ export type AgentEvent =
   | { type: 'done'; investigationId: string | null; durationMs: number };
 
 export type AgentEventType = AgentEvent['type'];
+
+// ---- Admin (all endpoints require the `X-Admin-Token` header) --------------------------
+
+export type AdminJobName = 'sweep' | 'watchlist' | 'sanctions';
+
+export interface AdminJobInfo {
+  job: AdminJobName;
+  schedule: string;
+  lastRunAt: number | null;
+  ok: boolean | null;
+  durationMs: number | null;
+  stats: Record<string, unknown> | null;
+  error?: string;
+}
+
+/** GET /api/admin/overview */
+export interface AdminOverview {
+  generatedAt: number;
+  usage: {
+    zerion: { used: number; limit: number };
+    glm: { used: number; limit: number };
+    agentPerIpLimit: number;
+    watchlistPerIpLimit: number;
+  };
+  counts: {
+    alerts: number;
+    alerts24h: number;
+    watchlist: number;
+    watchlistMax: number;
+    investigations: number;
+    investigationsToday: number;
+    investigationsBySource: { glm: number; template: number };
+    cacheEntries: number;
+    blockedClients: number;
+  };
+  jobs: AdminJobInfo[];
+  sanctions: HealthResponse['sanctions'];
+  config: {
+    glmConfigured: boolean;
+    glmModel: string;
+    glmHost: string;
+    glmThinking: string;
+    zerionConfigured: boolean;
+    blockscoutKey: boolean;
+    trongridKey: boolean;
+    allowedOrigins: string[];
+  };
+  chains: Record<Chain, ChainStatus>;
+}
+
+/** POST /api/admin/run/:job */
+export interface AdminJobRunResponse {
+  ok: boolean;
+  job: AdminJobName;
+  stats: Record<string, unknown>;
+  durationMs: number;
+  error?: string;
+}
+
+/** One client, identified only by a salted hash of its IP address. */
+export interface AdminClient {
+  id: string;
+  agentRuns: number;
+  watchAdds: number;
+  investigationsToday: number;
+  lastSeenAt: number | null;
+  blocked: boolean;
+  blockedReason?: string;
+  blockedAt?: number;
+}
+
+/** GET /api/admin/clients */
+export interface AdminClientsResponse {
+  date: string;
+  agentPerIpLimit: number;
+  watchlistPerIpLimit: number;
+  items: AdminClient[];
+}

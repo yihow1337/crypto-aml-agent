@@ -6,8 +6,8 @@ import { runInvestigation } from '../agent/loop';
 import { type Env, intVar } from '../env';
 import { ApiError, toApiError } from '../lib/errors';
 import type { SubrequestBudget } from '../lib/http';
-import { cacheGet, consumeQuota, ipHash } from '../lib/store';
-import { clientIp, enforceRateLimit } from '../middleware';
+import { cacheGet, consumeQuota } from '../lib/store';
+import { enforceNotBlocked, enforceRateLimit } from '../middleware';
 import { Investigator } from '../services/investigator';
 import { analysisKey } from './core';
 
@@ -22,6 +22,7 @@ export function registerAgentRoutes(app: Hono<{ Bindings: Env }>, newBudget: () 
   app.post('/api/agent/investigate', async (c) => {
     await enforceRateLimit(c, 'RL_API');
     await enforceRateLimit(c, 'RL_AGENT');
+    const hash = await enforceNotBlocked(c);
     const body = Body.parse(await c.req.json().catch(() => ({})));
     let inv: Investigator;
     let scenarioMeta: ScenarioMeta | undefined;
@@ -37,7 +38,6 @@ export function registerAgentRoutes(app: Hono<{ Bindings: Env }>, newBudget: () 
       if (cached) inv.seed(cached);
     }
 
-    const hash = await ipHash(clientIp(c));
     const perIp = intVar(c.env.AGENT_DAILY_PER_IP, 15);
     const quota = await consumeQuota(c.env, `agent:${hash}`, perIp);
     if (!quota.allowed) {

@@ -77,7 +77,7 @@ NEXT_PUBLIC_API_BASE=http://localhost:8787 npx next dev
 ## 部署
 
 1. `npx wrangler login`、`npx vercel login`
-2. `npx wrangler d1 create crypto-aml-db`，把 `database_id` 填入 `apps/worker/wrangler.jsonc`，再 `npx wrangler d1 migrations apply crypto-aml-db --remote`
+2. `npx wrangler d1 create crypto-aml-db`，把 `database_id` 填入 `apps/worker/wrangler.jsonc`，再 `npx wrangler d1 migrations apply crypto-aml-db --remote`（**每次新增 migration 都要先套用再部署 Worker**）
 3. `cd apps/worker && npx wrangler deploy`
 4. 設定金鑰（在自己的終端機輸入，不要寫進檔案）：
    ```bash
@@ -89,6 +89,14 @@ NEXT_PUBLIC_API_BASE=http://localhost:8787 npx next dev
 6. 把 Vercel 網域加入 `wrangler.jsonc` 的 `ALLOWED_ORIGINS` 後重新 `wrangler deploy`
 
 GLM 端點與模型可在 `wrangler.jsonc` 調整：`GLM_BASE_URL`（預設 Coding Plan 端點 `https://api.z.ai/api/coding/paas/v4`；一般 API 為 `https://api.z.ai/api/paas/v4`）、`GLM_MODEL`（預設 `glm-5.3`）。未設定金鑰或 GLM 失敗時，自動改用確定性模板報告。
+
+## 管理後台
+
+網站頁尾的「管理後台」（`/admin`）需輸入部署時設定的 `ADMIN_TOKEN` 才能使用；權杖只保存在瀏覽器分頁，關閉即清除，並以 `X-Admin-Token` 標頭傳送（伺服器以常數時間比對）。
+
+- **系統總覽與用量**：今日 Zerion 請求與 GLM 呼叫用量、AI 調查（GLM／模板）、警示、監控名單、快取、制裁名單、各項設定與鏈狀態（金鑰只顯示是否已設定）
+- **排程任務**：三個 Cron 的上次執行時間、成功與否、耗時與結果，並可一鍵手動執行
+- **濫用監控**：今日各用戶（IP 加鹽雜湊後的匿名 ID，不保存原始 IP）的 AI 調查與新增監控次數；可重設額度、封鎖或解除封鎖（封鎖後無法執行分析、AI 調查與新增監控）
 
 ## 濫用防護
 
