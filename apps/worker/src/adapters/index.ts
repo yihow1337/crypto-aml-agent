@@ -2,6 +2,7 @@ import type { Chain, ChainStatus } from '@aml/engine';
 import type { Env } from '../env';
 import type { SubrequestBudget } from '../lib/http';
 import type { PriceTable } from '../lib/prices';
+import { BscPublicRpcSource } from './bsc-public-rpc';
 import { BtcMempoolSource } from './btc-mempool';
 import { EthBlockscoutSource } from './eth-blockscout';
 import { FallbackSource } from './fallback';
@@ -34,8 +35,15 @@ export function createSource(chain: Chain, d: SourceDeps): DataSource {
         'Zerion 不追蹤此地址（多為交易所熱錢包等超大量地址），已改用 Blockscout 公開資料。',
       );
     }
-    case 'bsc':
-      return new ZerionSource('bsc', { ...base, apiKey: d.env.ZERION_API_KEY });
+    case 'bsc': {
+      const publicNode = () => new BscPublicRpcSource(base);
+      if (!d.env.ZERION_API_KEY) return publicNode();
+      return new FallbackSource(
+        new ZerionSource('bsc', { ...base, apiKey: d.env.ZERION_API_KEY }),
+        publicNode,
+        'Zerion 不追蹤此地址（多為交易所熱錢包等超大量地址），已改用 BSC 公開節點的近期轉帳資料。',
+      );
+    }
     case 'tron':
       return new TronGridSource({ ...base, apiKey: d.env.TRONGRID_API_KEY });
     case 'btc':
@@ -50,8 +58,8 @@ export function chainStatus(env: Env): Record<Chain, ChainStatus> {
       ? { available: true, source: 'Zerion' }
       : { available: true, source: 'Blockscout', note: env.BLOCKSCOUT_API_KEY ? undefined : '公開端點，尖峰時段可能限流' },
     bsc: zerion
-      ? { available: true, source: 'Zerion' }
-      : { available: false, source: 'Zerion', note: '未設定 ZERION_API_KEY，僅能使用內建情境' },
+      ? { available: true, source: 'Zerion', note: '超大量地址改用公開節點近期資料' }
+      : { available: true, source: 'BSC 公開節點', note: '僅涵蓋最近數分鐘的主流代幣轉帳' },
     tron: { available: true, source: 'TronGrid', note: env.TRONGRID_API_KEY ? undefined : '未設定 API 金鑰，可能受限流' },
     btc: { available: true, source: 'mempool.space' },
   };

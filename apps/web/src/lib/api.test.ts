@@ -115,3 +115,17 @@ describe('api client', () => {
     await expect(api.health()).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
   });
 });
+
+describe('describeError for addresses a data source will not serve', () => {
+  it('does not tell the user to retry later for a 422 upstream error', () => {
+    const err = new ApiError('UPSTREAM_ERROR', 'Zerion 不追蹤此地址（多為交易所熱錢包等超大量地址），無法即時分析。', 422);
+    const d = describeError(err);
+    expect(d.title).toBe('此地址無法即時分析。');
+    expect(d.title).not.toContain('稍後');
+    expect(d.detail).toContain('Zerion');
+  });
+
+  it('keeps the temporary-outage wording for 5xx upstream errors', () => {
+    expect(describeError(new ApiError('UPSTREAM_ERROR', 'HTTP 502', 502)).title).toContain('稍後再試');
+  });
+});

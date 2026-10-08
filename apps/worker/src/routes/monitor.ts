@@ -192,7 +192,6 @@ export function registerMonitorRoutes(app: Hono<{ Bindings: Env }>): void {
     const chain = body.chain as Chain;
     const address = body.address.trim();
     if (!isValidAddress(chain, address)) throw new ApiError(400, 'INVALID_ADDRESS', '地址格式不正確。');
-    if (chain === 'bsc' && !c.env.ZERION_API_KEY) throw new ApiError(503, 'CHAIN_UNAVAILABLE', 'BSC 監控未啟用（缺少 Zerion 金鑰）。');
     const stored = normalizeAddress(chain, address);
     const existing = await c.env.DB.prepare('SELECT * FROM watchlist WHERE chain = ? AND address = ?').bind(chain, stored).first<WatchRow>();
     if (existing) return c.json(toWatch(existing));

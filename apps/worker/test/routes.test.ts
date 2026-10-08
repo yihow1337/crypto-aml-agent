@@ -34,6 +34,29 @@ function ethRoutes(): [string | RegExp, Handler][] {
   ];
 }
 
+/** Minimal BSC public JSON-RPC node: head, balance, nonce and an empty log window. */
+function publicNode(): [string | RegExp, Handler] {
+  return [
+    'publicnode.com',
+    (_url, init) => {
+      const body = JSON.parse(String(init?.body)) as { id: number; method: string }[];
+      const answer = (c: { id: number; method: string }) => ({
+        jsonrpc: '2.0',
+        id: c.id,
+        result:
+          c.method === 'eth_getBlockByNumber'
+            ? { number: '0xf4240', timestamp: '0x6a6a0000' }
+            : c.method === 'eth_getLogs'
+              ? []
+              : c.method === 'eth_getBalance'
+                ? '0xde0b6b3a7640000'
+                : '0x1',
+      });
+      return Array.isArray(body) ? body.map(answer) : answer(body);
+    },
+  ];
+}
+
 function parseSse(text: string): AgentEvent[] {
   return text
     .split('\n\n')
@@ -51,7 +74,7 @@ describe('health, detect, CORS', () => {
     const body = (await res.json()) as { ok: boolean; sanctions: { counts: { total: number } }; chains: { bsc: { available: boolean } }; glm: { configured: boolean } };
     expect(body.ok).toBe(true);
     expect(body.sanctions.counts.total).toBeGreaterThan(900);
-    expect(body.chains.bsc.available).toBe(false);
+    expect(body.chains.bsc.available).toBe(true);
     expect(body.glm.configured).toBe(false);
   });
 
@@ -90,11 +113,14 @@ describe('/api/analyze', () => {
     expect(((await res.json()) as { error: { code: string } }).error.code).toBe('INVALID_ADDRESS');
   });
 
-  it('returns 503 for BSC without a Zerion key', async () => {
-    const m = mockFetch(ethRoutes());
+  it('serves BSC from the keyless public node when no Zerion key is set', async () => {
+    const m = mockFetch([...ethRoutes(), publicNode()]);
     const res = await createApp({ fetcher: m.fetch }).request(`/api/analyze?chain=bsc&address=${RONIN}`, {}, makeEnv());
-    expect(res.status).toBe(503);
-    expect(((await res.json()) as { error: { code: string } }).error.code).toBe('CHAIN_UNAVAILABLE');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { dataQuality: { sources: string[]; notes: string[] }; profile: { balance: number } };
+    expect(body.dataQuality.sources.join()).toContain('公開節點');
+    expect(body.dataQuality.notes.join()).toContain('最近約');
+    expect(body.profile.balance).toBe(1);
   });
 
   it('analyzes a live ETH address and serves the second call from cache', async () => {
@@ -352,7 +378,7 @@ describe('/api/analyze via Zerion', () => {
 });
 
 describe('ETH fallback when Zerion cannot track an address', () => {
-  it('falls back to Blockscout for ETH and explains the failure for BSC', async () => {
+  it('falls back to Blockscout for ETH and to the public node for BSC', async () => {
     const untrackable = () => new Response(JSON.stringify({ errors: [{ title: 'Malformed parameter was sent', detail: 'untrackable wallet address' }] }), { status: 400 });
     const routes = (): [string | RegExp, Handler][] => [
       ['coingecko', () => ({ ethereum: { usd: 2500 }, binancecoin: { usd: 600 }, tron: { usd: 0.3 }, bitcoin: { usd: 80000 } })],
@@ -370,8 +396,10 @@ describe('ETH fallback when Zerion cannot track an address', () => {
     expect(body.score).toBe(100);
     expect(body.dataQuality.sources.join()).toContain('Blockscout');
     expect(body.dataQuality.notes.join()).toContain('Zerion');
-    const bsc = await createApp({ fetcher: mockFetch(routes()).fetch }).request(`/api/analyze?chain=bsc&address=${RONIN}`, {}, env);
-    expect(bsc.status).toBe(422);
-    expect(((await bsc.json()) as { error: { message: string } }).error.message).toContain('Zerion');
+    const bsc = await createApp({ fetcher: mockFetch([...routes(), publicNode()]).fetch }).request(`/api/analyze?chain=bsc&address=${RONIN}`, {}, env);
+    expect(bsc.status).toBe(200);
+    const bscBody = (await bsc.json()) as { dataQuality: { sources: string[]; notes: string[] } };
+    expect(bscBody.dataQuality.sources.join()).toContain('公開節點');
+    expect(bscBody.dataQuality.notes.join()).toContain('Zerion 不追蹤');
   });
 });

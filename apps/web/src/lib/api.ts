@@ -237,6 +237,8 @@ export function describeError(err: unknown): ErrorDescription {
     case 'NOT_FOUND':
       return { title: '找不到指定的資料。', detail: server };
     case 'UPSTREAM_ERROR':
+      // 422: the data source refuses this particular address — retrying will not help.
+      if (e.status === 422) return { title: '此地址無法即時分析。', detail: server };
       return { title: '鏈上資料來源暫時無法回應，請稍後再試。', detail: server };
     case 'RATE_LIMITED':
       return {

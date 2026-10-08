@@ -228,8 +228,7 @@ export async function watchlistScan(env: Env, budget: SubrequestBudget): Promise
   const rows = (
     await env.DB.prepare(
       `SELECT id, chain, address FROM watchlist
-       WHERE NOT (chain = 'bsc' AND ?1 = 0)
-         AND NOT (chain IN ('eth', 'bsc') AND ?1 = 1 AND COALESCE(last_scanned_at, 0) > ?2)
+       WHERE NOT (chain IN ('eth', 'bsc') AND ?1 = 1 AND COALESCE(last_scanned_at, 0) > ?2)
        ORDER BY COALESCE(last_scanned_at, 0) ASC LIMIT 2`,
     )
       .bind(env.ZERION_API_KEY ? 1 : 0, now - 6 * 3600)
